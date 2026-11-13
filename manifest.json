@@ -9,15 +9,15 @@
 "orientation": "portrait",
 "icons": [
 {
-"src": "https://placehold.co/192x192/16a34a/ffffff.png?text=JK",
+"src": "1001392038.jpg",
 "sizes": "192x192",
 "type": "image/png",
 "purpose": "any maskable"
 },
 {
-"src": "https://placehold.co/512x512/16a34a/ffffff.png?text=JK",
+"src": "1001392038.jpg",
 "sizes": "512x512",
-"type": "image/png"
+"type": "image/jpg"
 }
 ]
 }
