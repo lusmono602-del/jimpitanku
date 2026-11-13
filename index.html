@@ -439,16 +439,19 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'jimpitan-app';
         let db, auth;
         let wargaRef, masukRef, keluarRef;
+        let isCloudActive = false;
 
         async function initFirebase() {
             try {
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-                if(!firebaseConfig) {
-                    console.warn("Konfigurasi Cloud Database tidak ditemukan!");
-                    showToast("Sistem Cloud tidak tersedia", "error");
-                    return false;
+                const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+                if(!firebaseConfigStr) {
+                    console.warn("Konfigurasi Cloud Database tidak ditemukan! Mengalihkan ke mode lokal.");
+                    showToast("Masuk dengan Mode Lokal", "success");
+                    isCloudActive = false;
+                    return true; // Tetap izinkan masuk ke aplikasi
                 }
                 
+                const firebaseConfig = JSON.parse(firebaseConfigStr);
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -466,12 +469,14 @@
                 masukRef = collection(db, 'artifacts', appId, 'public', 'data', 'masuk');
                 keluarRef = collection(db, 'artifacts', appId, 'public', 'data', 'keluar');
 
+                isCloudActive = true;
                 setupRealtime();
                 return true;
             } catch (error) {
                 console.error("Firebase init error:", error);
-                showToast("Gagal koneksi ke server cloud", "error");
-                return false;
+                showToast("Gagal koneksi, beralih ke Lokal", "success");
+                isCloudActive = false;
+                return true;
             }
         }
 
@@ -571,17 +576,29 @@
             if(tabName === 'laporan') renderLaporan();
         }
 
-        // --- 3. CLOUD CRUD LOGIC ---
+        // --- 3. CLOUD & LOKAL CRUD LOGIC ---
         async function handleTambahWarga(e) {
             e.preventDefault();
+            const newData = {
+                nama: document.getElementById('warga-nama').value,
+                blok: document.getElementById('warga-blok').value,
+                no: document.getElementById('warga-no').value,
+                telp: document.getElementById('warga-telp').value
+            };
+
+            // Jika mode lokal aktif, simpan di memori browser sementara
+            if (!isCloudActive) {
+                newData.id = Date.now().toString();
+                state.warga.push(newData);
+                closeModal('modal-tambah-warga');
+                showToast('Warga ditambahkan (Lokal)!');
+                renderWarga(); renderDashboard();
+                return;
+            }
+
             if(!auth || !auth.currentUser) return showToast('Koneksi belum siap', 'error');
             try {
-                await addDoc(wargaRef, {
-                    nama: document.getElementById('warga-nama').value,
-                    blok: document.getElementById('warga-blok').value,
-                    no: document.getElementById('warga-no').value,
-                    telp: document.getElementById('warga-telp').value
-                });
+                await addDoc(wargaRef, newData);
                 closeModal('modal-tambah-warga');
                 showToast('Warga ditambahkan!');
             } catch(err) { showToast('Gagal menyimpan', 'error'); }
@@ -610,15 +627,28 @@
 
         async function handleEditWarga(e) {
             e.preventDefault();
-            if(!auth || !auth.currentUser) return;
             const id = document.getElementById('edit-warga-id').value;
+            const updatedData = {
+                nama: document.getElementById('edit-warga-nama').value,
+                blok: document.getElementById('edit-warga-blok').value,
+                no: document.getElementById('edit-warga-no').value,
+                telp: document.getElementById('edit-warga-telp').value
+            };
+
+            if (!isCloudActive) {
+                const idx = state.warga.findIndex(w => w.id === id);
+                if(idx !== -1) {
+                    state.warga[idx] = { ...state.warga[idx], ...updatedData };
+                    closeModal('modal-edit-warga');
+                    showToast('Data diperbarui (Lokal)!');
+                    renderWarga(); renderDashboard();
+                }
+                return;
+            }
+
+            if(!auth || !auth.currentUser) return;
             try {
-                await updateDoc(doc(wargaRef, id), {
-                    nama: document.getElementById('edit-warga-nama').value,
-                    blok: document.getElementById('edit-warga-blok').value,
-                    no: document.getElementById('edit-warga-no').value,
-                    telp: document.getElementById('edit-warga-telp').value
-                });
+                await updateDoc(doc(wargaRef, id), updatedData);
                 closeModal('modal-edit-warga');
                 showToast('Data warga diperbarui!');
             } catch(err) { showToast('Gagal update', 'error'); }
@@ -626,6 +656,13 @@
 
         async function hapusWarga(id) {
             if(confirm('Hapus data warga ini?')) {
+                if (!isCloudActive) {
+                    state.warga = state.warga.filter(w => w.id !== id);
+                    showToast('Warga dihapus (Lokal)');
+                    renderWarga(); renderDashboard();
+                    return;
+                }
+
                 if(!auth || !auth.currentUser) return;
                 try {
                     await deleteDoc(doc(wargaRef, id));
@@ -651,7 +688,6 @@
 
         async function handleTambahMasuk(e) {
             e.preventDefault();
-            if(!auth || !auth.currentUser) return;
             const idWarga = document.getElementById('masuk-warga-id').value;
             const bulan = parseInt(document.getElementById('masuk-bulan').value);
             const tahun = parseInt(document.getElementById('masuk-tahun').value);
@@ -661,12 +697,27 @@
                 showToast(`Iuran sudah dicatat!`, 'error'); return;
             }
 
+            const newData = {
+                tgl: document.getElementById('masuk-tanggal').value,
+                idWarga, bulan, tahun,
+                nominal: parseInt(document.getElementById('masuk-nominal').value)
+            };
+
+            if (!isCloudActive) {
+                newData.id = Date.now().toString();
+                state.masuk.push(newData);
+                closeModal('modal-tambah-masuk');
+                showToast('Iuran dicatat (Lokal)!');
+                state.filterMasukBulan = bulan;
+                state.filterMasukTahun = tahun;
+                renderFilterBulanMasuk();
+                renderMasuk(); renderDashboard();
+                return;
+            }
+
+            if(!auth || !auth.currentUser) return;
             try {
-                await addDoc(masukRef, {
-                    tgl: document.getElementById('masuk-tanggal').value,
-                    idWarga, bulan, tahun,
-                    nominal: parseInt(document.getElementById('masuk-nominal').value)
-                });
+                await addDoc(masukRef, newData);
                 closeModal('modal-tambah-masuk');
                 showToast('Iuran berhasil dicatat!');
                 state.filterMasukBulan = bulan;
@@ -677,6 +728,13 @@
 
         async function hapusMasuk(id) {
             if(confirm('Batalkan catatan iuran ini?')) {
+                if (!isCloudActive) {
+                    state.masuk = state.masuk.filter(m => m.id !== id);
+                    showToast('Catatan dihapus (Lokal)');
+                    renderMasuk(); renderDashboard();
+                    return;
+                }
+
                 if(!auth || !auth.currentUser) return;
                 await deleteDoc(doc(masukRef, id));
                 showToast('Catatan dihapus');
@@ -685,13 +743,24 @@
 
         async function handleTambahKeluar(e) {
             e.preventDefault();
+            const newData = {
+                tgl: document.getElementById('keluar-tanggal').value,
+                ket: document.getElementById('keluar-keterangan').value,
+                nominal: parseInt(document.getElementById('keluar-nominal').value)
+            };
+
+            if (!isCloudActive) {
+                newData.id = Date.now().toString();
+                state.keluar.push(newData);
+                closeModal('modal-tambah-keluar');
+                showToast('Pengeluaran dicatat (Lokal)!');
+                renderKeluar(); renderDashboard();
+                return;
+            }
+
             if(!auth || !auth.currentUser) return;
             try {
-                await addDoc(keluarRef, {
-                    tgl: document.getElementById('keluar-tanggal').value,
-                    ket: document.getElementById('keluar-keterangan').value,
-                    nominal: parseInt(document.getElementById('keluar-nominal').value)
-                });
+                await addDoc(keluarRef, newData);
                 closeModal('modal-tambah-keluar');
                 showToast('Pengeluaran dicatat!');
             } catch(err) { showToast('Gagal mencatat', 'error'); }
@@ -699,6 +768,13 @@
 
         async function hapusKeluar(id) {
             if(confirm('Hapus catatan pengeluaran ini?')) {
+                if (!isCloudActive) {
+                    state.keluar = state.keluar.filter(k => k.id !== id);
+                    showToast('Catatan dihapus (Lokal)');
+                    renderKeluar(); renderDashboard();
+                    return;
+                }
+
                 if(!auth || !auth.currentUser) return;
                 await deleteDoc(doc(keluarRef, id));
                 showToast('Catatan dihapus');
