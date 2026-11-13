@@ -395,27 +395,74 @@
         <span id="toast-msg" class="text-sm font-medium">Notifikasi</span>
     </div>
 
-    <!-- Main JavaScript Logic -->
-    <script>
-        // --- 1. STATE & DATA INITIALIZATION ---
-        // Mencoba mengambil data dari Local Storage, jika tidak ada gunakan array kosong
-        const savedWarga = JSON.parse(localStorage.getItem('jk_warga')) || [];
-        const savedMasuk = JSON.parse(localStorage.getItem('jk_masuk')) || [];
-        const savedKeluar = JSON.parse(localStorage.getItem('jk_keluar')) || [];
+    <!-- Main JavaScript Logic (Cloud Real-time) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // --- 1. STATE & DATA INITIALIZATION ---
         const state = {
-            warga: savedWarga,
-            masuk: savedMasuk,
-            keluar: savedKeluar,
+            warga: [],
+            masuk: [],
+            keluar: [],
             filterMasukBulan: new Date().getMonth() + 1,
             filterMasukTahun: new Date().getFullYear()
         };
+        window.state = state; // Expose for inline HTML events
 
-        // Fungsi untuk menyimpan ke local storage
-        function saveData() {
-            localStorage.setItem('jk_warga', JSON.stringify(state.warga));
-            localStorage.setItem('jk_masuk', JSON.stringify(state.masuk));
-            localStorage.setItem('jk_keluar', JSON.stringify(state.keluar));
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'jimpitan-app';
+        let db, auth;
+        let wargaRef, masukRef, keluarRef;
+
+        async function initFirebase() {
+            try {
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                if(!firebaseConfig) {
+                    console.warn("Konfigurasi Cloud Database tidak ditemukan!");
+                    return;
+                }
+                
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (initialToken) {
+                    await signInWithCustomToken(auth, initialToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                if (!auth.currentUser) return;
+
+                // Gunakan direktori 'public' agar bisa dibuka dan sinkron oleh antar pengurus
+                wargaRef = collection(db, 'artifacts', appId, 'public', 'data', 'warga');
+                masukRef = collection(db, 'artifacts', appId, 'public', 'data', 'masuk');
+                keluarRef = collection(db, 'artifacts', appId, 'public', 'data', 'keluar');
+
+                setupRealtime();
+            } catch (error) {
+                console.error("Firebase init error:", error);
+                showToast("Gagal koneksi ke server", "error");
+            }
+        }
+
+        function setupRealtime() {
+            onSnapshot(wargaRef, (snap) => {
+                state.warga = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderWarga(); renderMasuk(); renderDashboard();
+            }, (err) => console.error(err));
+
+            onSnapshot(masukRef, (snap) => {
+                state.masuk = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderMasuk(); renderDashboard();
+            }, (err) => console.error(err));
+
+            onSnapshot(keluarRef, (snap) => {
+                state.keluar = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderKeluar(); renderDashboard();
+            }, (err) => console.error(err));
         }
 
         // Setup Date defaults
@@ -425,7 +472,6 @@
         
         const currentMonth = new Date().getMonth() + 1;
         const currentYear = new Date().getFullYear();
-        
         document.getElementById('lap-bulan').value = currentMonth;
         
         // Populate years
@@ -439,10 +485,7 @@
             }
         });
 
-        // Format Rupiah
         const formatRp = (angka) => 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
-        
-        // Get month name
         const getBulanName = (bln) => {
             const bulans = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
             return bulans[bln-1] || '';
@@ -462,7 +505,6 @@
 
             toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
             toast.classList.add('opacity-100', 'translate-y-0');
-            
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
                 toast.classList.remove('opacity-100', 'translate-y-0');
@@ -477,7 +519,6 @@
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
             document.getElementById(id).classList.remove('flex');
-            // reset forms depending on modal
             if(id === 'modal-tambah-warga') document.getElementById('form-tambah-warga').reset();
             if(id === 'modal-edit-warga') document.getElementById('form-edit-warga').reset();
             if(id === 'modal-tambah-masuk') {
@@ -492,17 +533,12 @@
         }
 
         function switchTab(tabName) {
-            // Hide all sections
             document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
-            // Remove active from nav
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             
-            // Show target section
             document.getElementById(`sec-${tabName}`).classList.remove('hidden');
-            // Add active to nav
             document.querySelector(`button[data-target="sec-${tabName}"]`).classList.add('active');
             
-            // Render specific tab
             if(tabName === 'dashboard') renderDashboard();
             if(tabName === 'warga') renderWarga();
             if(tabName === 'masuk') { renderFilterBulanMasuk(); renderMasuk(); }
@@ -510,24 +546,22 @@
             if(tabName === 'laporan') renderLaporan();
         }
 
-        // --- 3. CRUD LOGIC ---
+        // --- 3. CLOUD CRUD LOGIC ---
 
         // WARGA
-        function handleTambahWarga(e) {
+        async function handleTambahWarga(e) {
             e.preventDefault();
-            const baru = {
-                id: Date.now(),
-                nama: document.getElementById('warga-nama').value,
-                blok: document.getElementById('warga-blok').value,
-                no: document.getElementById('warga-no').value,
-                telp: document.getElementById('warga-telp').value
-            };
-            state.warga.push(baru);
-            saveData();
-            closeModal('modal-tambah-warga');
-            showToast('Warga ditambahkan!');
-            renderWarga();
-            renderDashboard();
+            if(!auth || !auth.currentUser) return showToast('Koneksi belum siap', 'error');
+            try {
+                await addDoc(wargaRef, {
+                    nama: document.getElementById('warga-nama').value,
+                    blok: document.getElementById('warga-blok').value,
+                    no: document.getElementById('warga-no').value,
+                    telp: document.getElementById('warga-telp').value
+                });
+                closeModal('modal-tambah-warga');
+                showToast('Warga ditambahkan!');
+            } catch(err) { showToast('Gagal menyimpan ke Cloud', 'error'); }
         }
 
         function bukaDetailWarga(id) {
@@ -551,33 +585,29 @@
             openModal('modal-edit-warga');
         }
 
-        function handleEditWarga(e) {
+        async function handleEditWarga(e) {
             e.preventDefault();
-            const id = parseInt(document.getElementById('edit-warga-id').value);
-            const idx = state.warga.findIndex(x => x.id === id);
-            if(idx > -1) {
-                state.warga[idx] = {
-                    id,
+            if(!auth || !auth.currentUser) return;
+            const id = document.getElementById('edit-warga-id').value;
+            try {
+                await updateDoc(doc(wargaRef, id), {
                     nama: document.getElementById('edit-warga-nama').value,
                     blok: document.getElementById('edit-warga-blok').value,
                     no: document.getElementById('edit-warga-no').value,
                     telp: document.getElementById('edit-warga-telp').value
-                };
-                saveData();
+                });
                 closeModal('modal-edit-warga');
                 showToast('Data warga diperbarui!');
-                renderWarga();
-            }
+            } catch(err) { showToast('Gagal update', 'error'); }
         }
 
-        function hapusWarga(id) {
+        async function hapusWarga(id) {
             if(confirm('Hapus data warga ini? Data transaksi yang terkait mungkin akan kehilangan nama.')) {
-                state.warga = state.warga.filter(w => w.id !== id);
-                saveData();
-                showToast('Warga dihapus');
-                renderWarga();
-                renderMasuk();
-                renderDashboard();
+                if(!auth || !auth.currentUser) return;
+                try {
+                    await deleteDoc(doc(wargaRef, id));
+                    showToast('Warga dihapus');
+                } catch(err) { showToast('Gagal hapus', 'error'); }
             }
         }
 
@@ -594,100 +624,83 @@
             
             document.getElementById('masuk-tanggal').value = new Date().toISOString().split('T')[0];
             document.getElementById('masuk-nominal').value = "15000";
-            
             openModal('modal-tambah-masuk');
         }
 
-        function handleTambahMasuk(e) {
+        async function handleTambahMasuk(e) {
             e.preventDefault();
-            const idWarga = parseInt(document.getElementById('masuk-warga-id').value);
+            if(!auth || !auth.currentUser) return;
+            const idWarga = document.getElementById('masuk-warga-id').value;
             const bulan = parseInt(document.getElementById('masuk-bulan').value);
             const tahun = parseInt(document.getElementById('masuk-tahun').value);
             
-            // Cek duplikat
             const duplikat = state.masuk.find(m => m.idWarga === idWarga && m.bulan === bulan && m.tahun === tahun);
             if(duplikat) {
-                showToast(`Iuran bulan ${getBulanName(bulan)} ${tahun} untuk warga ini sudah dicatat!`, 'error');
+                showToast(`Iuran sudah dicatat!`, 'error');
                 return;
             }
 
-            state.masuk.push({
-                id: Date.now(),
-                tgl: document.getElementById('masuk-tanggal').value,
-                idWarga, bulan, tahun,
-                nominal: parseInt(document.getElementById('masuk-nominal').value)
-            });
-            saveData();
-            closeModal('modal-tambah-masuk');
-            showToast('Iuran berhasil dicatat!');
-            state.filterMasukBulan = bulan; // autoselect bulan
-            state.filterMasukTahun = tahun;
-            renderFilterBulanMasuk();
-            renderMasuk();
-            renderDashboard();
+            try {
+                await addDoc(masukRef, {
+                    tgl: document.getElementById('masuk-tanggal').value,
+                    idWarga, bulan, tahun,
+                    nominal: parseInt(document.getElementById('masuk-nominal').value)
+                });
+                closeModal('modal-tambah-masuk');
+                showToast('Iuran berhasil dicatat!');
+                state.filterMasukBulan = bulan;
+                state.filterMasukTahun = tahun;
+                renderFilterBulanMasuk();
+            } catch(err) { showToast('Gagal simpan', 'error'); }
         }
 
-        function hapusMasuk(id) {
-            if(confirm('Hapus catatan iuran ini?')) {
-                state.masuk = state.masuk.filter(m => m.id !== id);
-                saveData();
+        async function hapusMasuk(id) {
+            if(confirm('Batalkan catatan iuran ini?')) {
+                if(!auth || !auth.currentUser) return;
+                await deleteDoc(doc(masukRef, id));
                 showToast('Catatan dihapus');
-                renderMasuk();
-                renderDashboard();
             }
         }
 
         // KELUAR
-        function handleTambahKeluar(e) {
+        async function handleTambahKeluar(e) {
             e.preventDefault();
-            state.keluar.push({
-                id: Date.now(),
-                tgl: document.getElementById('keluar-tanggal').value,
-                ket: document.getElementById('keluar-keterangan').value,
-                nominal: parseInt(document.getElementById('keluar-nominal').value)
-            });
-            saveData();
-            closeModal('modal-tambah-keluar');
-            showToast('Pengeluaran dicatat!');
-            renderKeluar();
-            renderDashboard();
+            if(!auth || !auth.currentUser) return;
+            try {
+                await addDoc(keluarRef, {
+                    tgl: document.getElementById('keluar-tanggal').value,
+                    ket: document.getElementById('keluar-keterangan').value,
+                    nominal: parseInt(document.getElementById('keluar-nominal').value)
+                });
+                closeModal('modal-tambah-keluar');
+                showToast('Pengeluaran dicatat!');
+            } catch(err) { showToast('Gagal mencatat', 'error'); }
         }
 
-        function hapusKeluar(id) {
+        async function hapusKeluar(id) {
             if(confirm('Hapus catatan pengeluaran ini?')) {
-                state.keluar = state.keluar.filter(k => k.id !== id);
-                saveData();
+                if(!auth || !auth.currentUser) return;
+                await deleteDoc(doc(keluarRef, id));
                 showToast('Catatan dihapus');
-                renderKeluar();
-                renderDashboard();
             }
         }
-
 
         // --- 4. RENDER UI LOGIC ---
 
         function renderDashboard() {
-            let totalMasuk = 0;
-            let totalKeluar = 0;
-            let masukBulanIni = 0;
-            let keluarBulanIni = 0;
-            const blnIni = currentMonth;
-            const thnIni = currentYear;
+            let totalMasuk = 0; let totalKeluar = 0;
+            let masukBulanIni = 0; let keluarBulanIni = 0;
 
             state.masuk.forEach(m => {
                 totalMasuk += m.nominal;
                 const date = new Date(m.tgl);
-                if(date.getMonth() + 1 === blnIni && date.getFullYear() === thnIni) {
-                    masukBulanIni += m.nominal;
-                }
+                if(date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear) masukBulanIni += m.nominal;
             });
 
             state.keluar.forEach(k => {
                 totalKeluar += k.nominal;
                 const date = new Date(k.tgl);
-                if(date.getMonth() + 1 === blnIni && date.getFullYear() === thnIni) {
-                    keluarBulanIni += k.nominal;
-                }
+                if(date.getMonth() + 1 === currentMonth && date.getFullYear() === currentYear) keluarBulanIni += k.nominal;
             });
 
             document.getElementById('dash-saldo').innerText = formatRp(totalMasuk - totalKeluar);
@@ -695,17 +708,16 @@
             document.getElementById('dash-keluar-bulan').innerText = formatRp(keluarBulanIni);
             document.getElementById('dash-total-warga').innerText = state.warga.length;
             
-            // Aktivitas terbaru (gabungan masuk & keluar, sort desc)
             const gabungan = [
                 ...state.masuk.map(m => ({...m, type: 'in', ts: new Date(m.tgl).getTime()})),
                 ...state.keluar.map(k => ({...k, type: 'out', ts: new Date(k.tgl).getTime()}))
-            ].sort((a, b) => b.ts - a.ts).slice(0, 5); // ambil 5 terbaru
+            ].sort((a, b) => b.ts - a.ts).slice(0, 5);
 
             const aktContainer = document.getElementById('dash-aktivitas');
             aktContainer.innerHTML = '';
             document.getElementById('dash-total-trx').innerText = 
-                state.masuk.filter(m => new Date(m.tgl).getMonth()+1 === blnIni).length + 
-                state.keluar.filter(k => new Date(k.tgl).getMonth()+1 === blnIni).length;
+                state.masuk.filter(m => new Date(m.tgl).getMonth()+1 === currentMonth).length + 
+                state.keluar.filter(k => new Date(k.tgl).getMonth()+1 === currentMonth).length;
 
             if(gabungan.length === 0) {
                 aktContainer.innerHTML = `<p class="text-sm text-slate-500 text-center py-4">Belum ada aktivitas.</p>`;
@@ -749,26 +761,20 @@
             );
 
             if(filtered.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Tidak ada data warga ditemukan.</div>`;
+                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Tidak ada data warga.</div>`;
                 return;
             }
 
             filtered.sort((a,b) => a.nama.localeCompare(b.nama)).forEach((w, index) => {
                 list.innerHTML += `
-                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center transition-all hover:border-green-300">
-                        <div class="flex items-center gap-3 flex-1 cursor-pointer overflow-hidden" onclick="bukaDetailWarga(${w.id})" title="Klik untuk melihat detail">
-                            <div class="w-8 h-8 min-w-[32px] rounded-full bg-green-50 text-green-700 flex items-center justify-center text-xs font-bold border border-green-100">
-                                ${index + 1}
-                            </div>
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center hover:border-green-300">
+                        <div class="flex items-center gap-3 flex-1 cursor-pointer overflow-hidden" onclick="bukaDetailWarga('${w.id}')">
+                            <div class="w-8 h-8 min-w-[32px] rounded-full bg-green-50 text-green-700 flex items-center justify-center text-xs font-bold border border-green-100">${index + 1}</div>
                             <h3 class="font-bold text-slate-800 text-sm truncate">${w.nama}</h3>
                         </div>
                         <div class="flex gap-1.5 ml-3">
-                            <button onclick="bukaEditWarga(${w.id})" class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-100 transition" title="Edit Data">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button onclick="hapusWarga(${w.id})" class="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition" title="Hapus Data">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                            <button onclick="bukaEditWarga('${w.id}')" class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-100 transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="hapusWarga('${w.id}')" class="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -778,7 +784,6 @@
         function renderFilterBulanMasuk() {
             const container = document.getElementById('filter-bulan-masuk');
             container.innerHTML = '';
-            // Tampilkan 6 bulan terakhir sbg filter cepat
             for(let i=0; i<6; i++) {
                 let d = new Date(currentYear, currentMonth - 1 - i, 1);
                 let b = d.getMonth() + 1;
@@ -801,24 +806,20 @@
             list.innerHTML = '';
             
             if(state.warga.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Data warga masih kosong. Silakan tambah data di menu Warga.</div>`;
+                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Data warga masih kosong.</div>`;
                 return;
             }
 
             let sortedWarga = [...state.warga].sort((a,b) => a.nama.localeCompare(b.nama));
 
             sortedWarga.forEach(w => {
-                // Cari apakah ada pembayaran untuk warga ini di bulan dan tahun yang dipilih
                 const iuran = state.masuk.find(m => m.idWarga === w.id && m.bulan === state.filterMasukBulan && m.tahun === state.filterMasukTahun);
                 
                 if (iuran) {
-                    // SUDAH BAYAR (HIJAU)
                     list.innerHTML += `
                         <div class="bg-green-50 p-3.5 rounded-2xl shadow-sm border border-green-200 flex justify-between items-center transition-all">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 min-w-[40px] rounded-full bg-green-500 text-white flex items-center justify-center text-lg shadow-sm">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
+                                <div class="w-10 h-10 min-w-[40px] rounded-full bg-green-500 text-white flex items-center justify-center text-lg shadow-sm"><i class="fa-solid fa-check"></i></div>
                                 <div>
                                     <h3 class="font-bold text-green-900 text-sm truncate max-w-[130px] sm:max-w-xs">${w.nama}</h3>
                                     <p class="text-[10px] font-medium text-green-700 mt-0.5">Lunas Tgl: ${iuran.tgl}</p>
@@ -826,24 +827,21 @@
                             </div>
                             <div class="text-right flex flex-col items-end">
                                 <p class="font-bold text-green-700 text-sm">${formatRp(iuran.nominal)}</p>
-                                <button onclick="hapusMasuk(${iuran.id})" class="text-[10px] text-red-500 hover:text-red-700 mt-1 bg-white px-2 py-0.5 rounded border border-red-100 flex items-center gap-1"><i class="fa-solid fa-xmark"></i> Batal</button>
+                                <button onclick="hapusMasuk('${iuran.id}')" class="text-[10px] text-red-500 hover:text-red-700 mt-1 bg-white px-2 py-0.5 rounded border border-red-100 flex items-center gap-1"><i class="fa-solid fa-xmark"></i> Batal</button>
                             </div>
                         </div>
                     `;
                 } else {
-                    // BELUM BAYAR (MERAH)
                     list.innerHTML += `
                         <div class="bg-red-50 p-3.5 rounded-2xl shadow-sm border border-red-200 flex justify-between items-center transition-all">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 min-w-[40px] rounded-full bg-white text-red-400 flex items-center justify-center text-lg border border-red-200 shadow-sm">
-                                    <i class="fa-solid fa-minus"></i>
-                                </div>
+                                <div class="w-10 h-10 min-w-[40px] rounded-full bg-white text-red-400 flex items-center justify-center text-lg border border-red-200 shadow-sm"><i class="fa-solid fa-minus"></i></div>
                                 <div>
                                     <h3 class="font-bold text-red-900 text-sm truncate max-w-[130px] sm:max-w-xs">${w.nama}</h3>
                                     <p class="text-[10px] text-red-500 mt-0.5">Blok ${w.blok}/${w.no}</p>
                                 </div>
                             </div>
-                            <button onclick="bukaModalBayar(${w.id})" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 shrink-0">
+                            <button onclick="bukaModalBayar('${w.id}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 shrink-0">
                                 Bayar <i class="fa-solid fa-arrow-right"></i>
                             </button>
                         </div>
@@ -856,26 +854,19 @@
             const list = document.getElementById('list-keluar');
             list.innerHTML = '';
             
-            // Urutkan terbaru
             const sorted = [...state.keluar].sort((a,b) => new Date(b.tgl) - new Date(a.tgl));
-            
-            // Hitung total pengeluaran tahun ini
-            const totalThnIni = sorted.filter(k => new Date(k.tgl).getFullYear() === currentYear)
-                                      .reduce((sum, k) => sum + k.nominal, 0);
+            const totalThnIni = sorted.filter(k => new Date(k.tgl).getFullYear() === currentYear).reduce((sum, k) => sum + k.nominal, 0);
             document.getElementById('info-total-pengeluaran').innerText = formatRp(totalThnIni);
 
             if(sorted.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Belum ada catatan pengeluaran.</div>`;
-                return;
+                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Belum ada catatan pengeluaran.</div>`; return;
             }
 
             sorted.forEach(k => {
                 list.innerHTML += `
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-lg">
-                                <i class="fa-solid fa-cart-shopping"></i>
-                            </div>
+                            <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-lg"><i class="fa-solid fa-cart-shopping"></i></div>
                             <div>
                                 <h3 class="font-bold text-slate-800 text-sm">${k.ket}</h3>
                                 <p class="text-[10px] text-slate-500 mt-0.5">${k.tgl}</p>
@@ -883,7 +874,7 @@
                         </div>
                         <div class="text-right">
                             <p class="font-bold text-red-500 text-sm">-${formatRp(k.nominal)}</p>
-                            <button onclick="hapusKeluar(${k.id})" class="text-[10px] text-slate-400 hover:text-red-600 mt-1"><i class="fa-solid fa-trash"></i> Hapus</button>
+                            <button onclick="hapusKeluar('${k.id}')" class="text-[10px] text-slate-400 hover:text-red-600 mt-1"><i class="fa-solid fa-trash"></i> Hapus</button>
                         </div>
                     </div>
                 `;
@@ -898,8 +889,7 @@
             list.innerHTML = '';
 
             if(state.warga.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Data warga kosong.</div>`;
-                return;
+                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Data warga kosong.</div>`; return;
             }
 
             let sortedWarga = [...state.warga].sort((a,b) => {
@@ -909,8 +899,7 @@
 
             sortedWarga.forEach(w => {
                 const iuran = state.masuk.find(m => m.idWarga === w.id && m.bulan === bln && m.tahun === thn);
-                let statusInfo = '';
-                let bgCls = '';
+                let statusInfo = ''; let bgCls = '';
                 
                 if(!iuran) {
                     statusInfo = `<span class="text-xs font-bold text-red-500"><i class="fa-solid fa-xmark mr-1"></i>Belum Bayar</span>`;
@@ -925,10 +914,7 @@
 
                 list.innerHTML += `
                     <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center ${bgCls}">
-                        <div>
-                            <p class="font-bold text-sm text-slate-800">${w.nama}</p>
-                            <p class="text-[10px] text-slate-500">Blok ${w.blok}/${w.no}</p>
-                        </div>
+                        <div><p class="font-bold text-sm text-slate-800">${w.nama}</p><p class="text-[10px] text-slate-500">Blok ${w.blok}/${w.no}</p></div>
                         ${statusInfo}
                     </div>
                 `;
@@ -936,7 +922,6 @@
         }
 
         // --- 5. PRINTING LOGIC ---
-        
         function cetakLaporanIuran() {
             const bln = parseInt(document.getElementById('lap-bulan').value);
             const thn = parseInt(document.getElementById('lap-tahun').value);
@@ -950,14 +935,7 @@
                 </div>
                 <table>
                     <thead>
-                        <tr>
-                            <th width="5%">No</th>
-                            <th width="25%">Nama Warga</th>
-                            <th width="15%">Blok/No</th>
-                            <th width="20%">Status</th>
-                            <th width="20%">Nominal Bayar</th>
-                            <th width="15%">Ket (Tgl)</th>
-                        </tr>
+                        <tr><th width="5%">No</th><th width="25%">Nama Warga</th><th width="15%">Blok/No</th><th width="20%">Status</th><th width="20%">Nominal Bayar</th><th width="15%">Ket (Tgl)</th></tr>
                     </thead>
                     <tbody>
             `;
@@ -971,48 +949,20 @@
             
             sortedWarga.forEach((w, i) => {
                 const iuran = state.masuk.find(m => m.idWarga === w.id && m.bulan === bln && m.tahun === thn);
-                let status = 'Belum';
-                let nominal = 0;
-                let cls = 'text-red-500';
-                let tgl = '-';
+                let status = 'Belum'; let nominal = 0; let cls = 'text-red-500'; let tgl = '-';
 
                 if(iuran) {
                     nominal = iuran.nominal;
                     totalMasukBulanIni += nominal;
                     tgl = iuran.tgl;
-                    if(nominal >= wajib) {
-                        status = 'Lunas';
-                        cls = 'text-green-600';
-                    } else {
-                        status = 'Kurang';
-                        cls = 'text-orange-500';
-                    }
+                    if(nominal >= wajib) { status = 'Lunas'; cls = 'text-green-600'; } 
+                    else { status = 'Kurang'; cls = 'text-orange-500'; }
                 }
 
-                html += `
-                    <tr>
-                        <td align="center">${i+1}</td>
-                        <td>${w.nama}</td>
-                        <td align="center">${w.blok}/${w.no}</td>
-                        <td align="center" class="${cls}"><b>${status}</b></td>
-                        <td align="right">${formatRp(nominal)}</td>
-                        <td align="center">${tgl}</td>
-                    </tr>
-                `;
+                html += `<tr><td align="center">${i+1}</td><td>${w.nama}</td><td align="center">${w.blok}/${w.no}</td><td align="center" class="${cls}"><b>${status}</b></td><td align="right">${formatRp(nominal)}</td><td align="center">${tgl}</td></tr>`;
             });
 
-            html += `
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="4" style="text-align:right">Total Pemasukan Iuran Bulan Ini:</th>
-                            <th align="right"><b>${formatRp(totalMasukBulanIni)}</b></th>
-                            <th></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            `;
-
+            html += `</tbody><tfoot><tr><th colspan="4" style="text-align:right">Total Pemasukan Iuran Bulan Ini:</th><th align="right"><b>${formatRp(totalMasukBulanIni)}</b></th><th></th></tr></tfoot></table>`;
             printArea.innerHTML = html;
             window.print();
         }
@@ -1027,19 +977,11 @@
                     <p>Tahun: <b>${thnIni}</b></p>
                 </div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th width="10%">No</th>
-                            <th width="20%">Tanggal</th>
-                            <th width="50%">Keterangan Keperluan</th>
-                            <th width="20%">Nominal Keluar</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th width="10%">No</th><th width="20%">Tanggal</th><th width="50%">Keterangan Keperluan</th><th width="20%">Nominal Keluar</th></tr></thead>
                     <tbody>
             `;
 
-            let dataTahunIni = state.keluar.filter(k => new Date(k.tgl).getFullYear() === thnIni)
-                                           .sort((a,b) => new Date(a.tgl) - new Date(b.tgl)); // lama ke baru
+            let dataTahunIni = state.keluar.filter(k => new Date(k.tgl).getFullYear() === thnIni).sort((a,b) => new Date(a.tgl) - new Date(b.tgl));
 
             let grandTotal = 0;
             if(dataTahunIni.length === 0) {
@@ -1047,34 +989,39 @@
             } else {
                 dataTahunIni.forEach((k, i) => {
                     grandTotal += k.nominal;
-                    html += `
-                        <tr>
-                            <td align="center">${i+1}</td>
-                            <td align="center">${k.tgl}</td>
-                            <td>${k.ket}</td>
-                            <td align="right">${formatRp(k.nominal)}</td>
-                        </tr>
-                    `;
+                    html += `<tr><td align="center">${i+1}</td><td align="center">${k.tgl}</td><td>${k.ket}</td><td align="right">${formatRp(k.nominal)}</td></tr>`;
                 });
             }
 
-            html += `
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="3" style="text-align:right">Total Pengeluaran:</th>
-                            <th align="right" class="text-red-500"><b>${formatRp(grandTotal)}</b></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            `;
-
+            html += `</tbody><tfoot><tr><th colspan="3" style="text-align:right">Total Pengeluaran:</th><th align="right" class="text-red-500"><b>${formatRp(grandTotal)}</b></th></tr></tfoot></table>`;
             printArea.innerHTML = html;
             window.print();
         }
 
-        // --- 6. INITIAL RENDER ---
-        renderDashboard(); // Mulai dengan Dashboard
+        // Mengekspor fungsi ke global (window) agar bisa dipanggil oleh tombol di HTML
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.switchTab = switchTab;
+        window.handleTambahWarga = handleTambahWarga;
+        window.bukaDetailWarga = bukaDetailWarga;
+        window.bukaEditWarga = bukaEditWarga;
+        window.handleEditWarga = handleEditWarga;
+        window.hapusWarga = hapusWarga;
+        window.bukaModalBayar = bukaModalBayar;
+        window.handleTambahMasuk = handleTambahMasuk;
+        window.hapusMasuk = hapusMasuk;
+        window.handleTambahKeluar = handleTambahKeluar;
+        window.hapusKeluar = hapusKeluar;
+        window.renderWarga = renderWarga;
+        window.renderMasuk = renderMasuk;
+        window.renderLaporan = renderLaporan;
+        window.renderFilterBulanMasuk = renderFilterBulanMasuk;
+        window.cetakLaporanIuran = cetakLaporanIuran;
+        window.cetakLaporanPengeluaran = cetakLaporanPengeluaran;
+
+        // --- 6. INITIAL RENDER & FIREBASE SETUP ---
+        renderDashboard();
+        initFirebase();
 
     </script>
 </body>
