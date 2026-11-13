@@ -445,7 +445,8 @@
                 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
                 if(!firebaseConfig) {
                     console.warn("Konfigurasi Cloud Database tidak ditemukan!");
-                    return;
+                    showToast("Sistem Cloud tidak tersedia", "error");
+                    return false;
                 }
                 
                 const app = initializeApp(firebaseConfig);
@@ -459,16 +460,18 @@
                     await signInAnonymously(auth);
                 }
 
-                if (!auth.currentUser) return;
+                if (!auth.currentUser) return false;
 
                 wargaRef = collection(db, 'artifacts', appId, 'public', 'data', 'warga');
                 masukRef = collection(db, 'artifacts', appId, 'public', 'data', 'masuk');
                 keluarRef = collection(db, 'artifacts', appId, 'public', 'data', 'keluar');
 
                 setupRealtime();
+                return true;
             } catch (error) {
                 console.error("Firebase init error:", error);
-                showToast("Gagal koneksi ke server", "error");
+                showToast("Gagal koneksi ke server cloud", "error");
+                return false;
             }
         }
 
@@ -1012,16 +1015,31 @@
             window.print();
         }
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
             const sandi = document.getElementById('input-sandi').value;
+            const btn = e.target.querySelector('button');
             
             if(sandi === 'adminrt') {
-                document.getElementById('login-container').classList.add('hidden');
-                document.getElementById('app-container').classList.remove('hidden');
+                // Tampilkan loading saat menghubungkan ke Cloud
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Menghubungkan...';
+                btn.disabled = true;
+                btn.classList.add('opacity-80', 'cursor-wait');
                 
-                initFirebase();
-                showToast('Berhasil masuk!', 'success');
+                // Tunggu sampai koneksi firebase selesai
+                const isConnected = await initFirebase();
+                
+                if (isConnected) {
+                    document.getElementById('login-container').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('hidden');
+                    showToast('Berhasil masuk!', 'success');
+                } else {
+                    // Kembalikan tombol jika gagal
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-80', 'cursor-wait');
+                }
             } else {
                 showToast('Kata sandi salah!', 'error');
             }
