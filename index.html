@@ -229,6 +229,36 @@
         .nav-btn.active { color: #16a34a; }
         .nav-btn.active i { transform: scale(1.1); transition: transform 0.2s; }
     </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-green-200">
+
+    <!-- LAYAR LOGIN -->
+    <div id="login-container" class="min-h-screen flex items-center justify-center bg-green-600 px-4 z-50">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center animate-slide-up">
+            <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">JimpitanKu</h1>
+            <p class="text-slate-500 text-sm mb-6">Aplikasi Kas & Iuran Warga</p>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div class="relative">
+                    <i class="fa-solid fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input type="password" id="input-sandi" placeholder="Masukkan Sandi..." required class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm transition-all">
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-green-600/30">
+                    Masuk Aplikasi
+                </button>
+            </form>
+            <p class="text-xs text-slate-400 mt-6">Sandi bawaan: <span class="font-bold text-slate-600">adminrt</span></p>
+        </div>
+    </div>
+
+    <!-- BUNGKUS APLIKASI (Disembunyikan sebelum login) -->
+    <div id="app-container" class="hidden">
+
+    <!-- Header / App Bar (No Print) -->
+    <header class="no-print fixed top-0 w-full bg-green-600 text-white shadow-md z-40">
 
     <!-- PRINT CONTAINERS -->
     <div id="print-area" class="print-only print-container"></div>
@@ -389,8 +419,10 @@
         </div>
     </div>
 
+    </div> <!-- AKHIR BUNGKUS APLIKASI -->
+
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg z-[60] flex items-center gap-3 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px] max-w-[90%] w-max">
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg z-[100] flex items-center gap-3 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px] max-w-[90%] w-max">
         <i id="toast-icon" class="fa-solid fa-check-circle text-green-400 text-lg"></i>
         <span id="toast-msg" class="text-sm font-medium">Notifikasi</span>
     </div>
@@ -998,7 +1030,26 @@
             window.print();
         }
 
+        // FUNGSI LOGIN
+        function handleLogin(e) {
+            e.preventDefault();
+            const sandi = document.getElementById('input-sandi').value;
+            
+            // Cek apakah sandi benar (Anda bisa mengganti 'adminrt' dengan sandi lain)
+            if(sandi === 'adminrt') {
+                document.getElementById('login-container').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                
+                // Baru mulai mengambil data Cloud Database setelah berhasil login
+                initFirebase();
+                showToast('Berhasil masuk!', 'success');
+            } else {
+                showToast('Kata sandi salah!', 'error');
+            }
+        }
+
         // Mengekspor fungsi ke global (window) agar bisa dipanggil oleh tombol di HTML
+        window.handleLogin = handleLogin;
         window.openModal = openModal;
         window.closeModal = closeModal;
         window.switchTab = switchTab;
@@ -1021,7 +1072,7 @@
 
         // --- 6. INITIAL RENDER & FIREBASE SETUP ---
         renderDashboard();
-        initFirebase();
+        // initFirebase(); -- Sekarang dipanggil HANYA JIKA sandi benar di dalam fungsi handleLogin()
 
     </script>
 </body>
