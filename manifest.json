@@ -1,7 +1,7 @@
 {
 "name": "JimpitanKu Kas RT",
 "short_name": "JimpitanKu",
-"description": "Aplikasi pencatatan kas dan iuran warga RT",
+"description": "Kas RT 01",
 "start_url": "./index.html",
 "display": "standalone",
 "background_color": "#f8fafc",
