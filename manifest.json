@@ -11,13 +11,13 @@
 {
 "src": "1001392038.jpg",
 "sizes": "192x192",
-"type": "image/jpeg",
+"type": "image/jpg",
 "purpose": "any maskable"
 },
 {
 "src": "1001392038.jpg",
 "sizes": "512x512",
-"type": "image/jpeg"
+"type": "image/jpg"
 }
 ]
 }
