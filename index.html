@@ -37,195 +37,7 @@
         
         /* Bottom Nav Safe Area for modern phones */
         .pb-safe { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
-    </style>
-</head>
-<body class="text-slate-800 antialiased selection:bg-green-200">
-
-    <!-- Header / App Bar (No Print) -->
-    <header class="no-print fixed top-0 w-full bg-green-600 text-white shadow-md z-40">
-        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-wallet text-2xl"></i>
-                <h1 class="text-xl font-bold tracking-tight">JimpitanKu</h1>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <main class="max-w-md mx-auto pt-20 pb-safe px-4 min-h-screen no-print relative">
         
-        <!-- SECTION 1: DASHBOARD -->
-        <section id="sec-dashboard" class="animate-fade-in">
-            <!-- Saldo Card -->
-            <div class="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-6 text-white shadow-lg shadow-green-600/20 mb-6">
-                <p class="text-green-100 text-sm font-medium mb-1">Total Saldo Kas</p>
-                <h2 class="text-3xl font-bold mb-4" id="dash-saldo">Rp 0</h2>
-                
-                <div class="grid grid-cols-2 gap-4 border-t border-green-500/50 pt-4">
-                    <div>
-                        <p class="text-green-100 text-xs mb-1">Masuk Bulan Ini</p>
-                        <p class="font-semibold" id="dash-masuk-bulan">Rp 0</p>
-                    </div>
-                    <div>
-                        <p class="text-green-100 text-xs mb-1">Keluar Bulan Ini</p>
-                        <p class="font-semibold" id="dash-keluar-bulan">Rp 0</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-users"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500">Total Warga</p>
-                        <p class="font-bold text-lg" id="dash-total-warga">0</p>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-receipt"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500">Trx Bulan Ini</p>
-                        <p class="font-bold text-lg" id="dash-total-trx">0</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="flex justify-between items-end mb-4">
-                <h3 class="font-bold text-slate-800">Aktivitas Terakhir</h3>
-            </div>
-            <div class="space-y-3" id="dash-aktivitas">
-                <!-- Activities will be injected here -->
-            </div>
-        </section>
-
-        <!-- SECTION 2: WARGA -->
-        <section id="sec-warga" class="hidden animate-fade-in">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Data Warga</h2>
-                <button onclick="openModal('modal-tambah-warga')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Warga
-                </button>
-            </div>
-            <div class="relative mb-4">
-                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="search-warga" oninput="renderWarga()" placeholder="Cari nama atau blok..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
-            </div>
-            <div class="space-y-3" id="list-warga">
-                <!-- Warga cards go here -->
-            </div>
-        </section>
-
-        <!-- SECTION 3: MASUK (IURAN) -->
-        <section id="sec-masuk" class="hidden animate-fade-in">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Status Iuran Warga</h2>
-            </div>
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 flex gap-2 overflow-x-auto" id="filter-bulan-masuk">
-                <!-- Bulan filters go here -->
-            </div>
-            <div class="space-y-3" id="list-masuk">
-                <!-- Iuran cards go here -->
-            </div>
-        </section>
-
-        <!-- SECTION 4: KELUAR (PENGELUARAN) -->
-        <section id="sec-keluar" class="hidden animate-fade-in">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Uang Keluar</h2>
-                <div class="flex gap-2">
-                    <button onclick="cetakLaporanPengeluaran()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm">
-                        <i class="fa-solid fa-print"></i>
-                    </button>
-                    <button onclick="openModal('modal-tambah-keluar')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-plus"></i> Catat
-                    </button>
-                </div>
-            </div>
-            
-            <div class="bg-red-50 p-4 rounded-xl border border-red-100 mb-4 flex justify-between items-center">
-                <div>
-                    <p class="text-xs text-red-600 font-medium">Total Pengeluaran Tahun Ini</p>
-                    <p class="text-lg font-bold text-red-700" id="info-total-pengeluaran">Rp 0</p>
-                </div>
-                <i class="fa-solid fa-arrow-trend-down text-2xl text-red-300"></i>
-            </div>
-
-            <div class="space-y-3" id="list-keluar">
-                <!-- Pengeluaran cards go here -->
-            </div>
-        </section>
-
-        <!-- SECTION 5: LAPORAN -->
-        <section id="sec-laporan" class="hidden animate-fade-in">
-            <h2 class="text-xl font-bold mb-4">Laporan Iuran Warga</h2>
-            
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Bulan</label>
-                        <select id="lap-bulan" onchange="renderLaporan()" class="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-green-500">
-                            <option value="1">Januari</option><option value="2">Februari</option>
-                            <option value="3">Maret</option><option value="4">April</option>
-                            <option value="5">Mei</option><option value="6">Juni</option>
-                            <option value="7">Juli</option><option value="8">Agustus</option>
-                            <option value="9">September</option><option value="10">Oktober</option>
-                            <option value="11">November</option><option value="12">Desember</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Tahun</label>
-                        <select id="lap-tahun" onchange="renderLaporan()" class="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-green-500">
-                            <!-- Tahun diisi via js -->
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Nominal Wajib (Rp)</label>
-                    <input type="number" id="lap-wajib" value="15000" oninput="renderLaporan()" class="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-green-500">
-                </div>
-                <button onclick="cetakLaporanIuran()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-print"></i> Cetak Laporan PDF
-                </button>
-            </div>
-
-            <div class="space-y-3" id="list-laporan">
-                <!-- Laporan status go here -->
-            </div>
-        </section>
-    </main>
-
-    <!-- BOTTOM NAVIGATION (No Print) -->
-    <nav class="no-print fixed bottom-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-40 pb-[env(safe-area-inset-bottom)]">
-        <div class="max-w-md mx-auto flex justify-around items-center h-16">
-            <button onclick="switchTab('dashboard')" class="nav-btn active flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-dashboard">
-                <i class="fa-solid fa-house text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Beranda</span>
-            </button>
-            <button onclick="switchTab('warga')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-warga">
-                <i class="fa-solid fa-users text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Warga</span>
-            </button>
-            <button onclick="switchTab('masuk')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-masuk">
-                <i class="fa-solid fa-arrow-right-to-bracket text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Masuk</span>
-            </button>
-            <button onclick="switchTab('keluar')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-keluar">
-                <i class="fa-solid fa-arrow-right-from-bracket text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Keluar</span>
-            </button>
-            <button onclick="switchTab('laporan')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-laporan">
-                <i class="fa-solid fa-file-invoice text-xl mb-1"></i>
-                <span class="text-[10px] font-medium">Laporan</span>
-            </button>
-        </div>
-    </nav>
-    <style>
         .nav-btn.active { color: #16a34a; }
         .nav-btn.active i { transform: scale(1.1); transition: transform 0.2s; }
     </style>
@@ -250,174 +62,355 @@
                     Masuk Aplikasi
                 </button>
             </form>
-            <p class="text-xs text-slate-400 mt-6">Sandi bawaan: <span class="font-bold text-slate-600">adminrt</span></p>
         </div>
     </div>
 
     <!-- BUNGKUS APLIKASI (Disembunyikan sebelum login) -->
     <div id="app-container" class="hidden">
 
-    <!-- Header / App Bar (No Print) -->
-    <header class="no-print fixed top-0 w-full bg-green-600 text-white shadow-md z-40">
-
-    <!-- PRINT CONTAINERS -->
-    <div id="print-area" class="print-only print-container"></div>
-
-    <!-- MODALS -->
-    
-    <!-- Modal Tambah Warga -->
-    <div id="modal-tambah-warga" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800">Tambah Warga</h3>
-                <button onclick="closeModal('modal-tambah-warga')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <!-- Header / App Bar (No Print) -->
+        <header class="no-print fixed top-0 w-full bg-green-600 text-white shadow-md z-40">
+            <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-wallet text-2xl"></i>
+                    <h1 class="text-xl font-bold tracking-tight">JimpitanKu</h1>
+                </div>
             </div>
-            <form id="form-tambah-warga" onsubmit="handleTambahWarga(event)" class="p-4 space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Nama Lengkap</label>
-                    <input type="text" id="warga-nama" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">Blok Rumah</label>
-                        <input type="text" id="warga-blok" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">No. Rumah</label>
-                        <input type="text" id="warga-no" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">No. HP/WA (Opsional)</label>
-                    <input type="text" id="warga-telp" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
-                </div>
-                <button type="submit" class="w-full py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors">Simpan Warga</button>
-            </form>
-        </div>
-    </div>
+        </header>
 
-    <!-- Modal Edit Warga -->
-    <div id="modal-edit-warga" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800">Edit Data Warga</h3>
-                <button onclick="closeModal('modal-edit-warga')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <form id="form-edit-warga" onsubmit="handleEditWarga(event)" class="p-4 space-y-4">
-                <input type="hidden" id="edit-warga-id">
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Nama Lengkap</label>
-                    <input type="text" id="edit-warga-nama" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">Blok Rumah</label>
-                        <input type="text" id="edit-warga-blok" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">No. Rumah</label>
-                        <input type="text" id="edit-warga-no" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+        <!-- Main Content Area -->
+        <main class="max-w-md mx-auto pt-20 pb-safe px-4 min-h-screen no-print relative">
+            
+            <!-- SECTION 1: DASHBOARD -->
+            <section id="sec-dashboard" class="animate-fade-in">
+                <!-- Saldo Card -->
+                <div class="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-6 text-white shadow-lg shadow-green-600/20 mb-6">
+                    <p class="text-green-100 text-sm font-medium mb-1">Total Saldo Kas</p>
+                    <h2 class="text-3xl font-bold mb-4" id="dash-saldo">Rp 0</h2>
+                    
+                    <div class="grid grid-cols-2 gap-4 border-t border-green-500/50 pt-4">
+                        <div>
+                            <p class="text-green-100 text-xs mb-1">Masuk Bulan Ini</p>
+                            <p class="font-semibold" id="dash-masuk-bulan">Rp 0</p>
+                        </div>
+                        <div>
+                            <p class="text-green-100 text-xs mb-1">Keluar Bulan Ini</p>
+                            <p class="font-semibold" id="dash-keluar-bulan">Rp 0</p>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">No. HP/WA (Opsional)</label>
-                    <input type="text" id="edit-warga-telp" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
-                </div>
-                <button type="submit" class="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">Simpan Perubahan</button>
-            </form>
-        </div>
-    </div>
 
-    <!-- Modal Detail Warga -->
-    <div id="modal-detail-warga" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800">Detail Warga</h3>
-                <button onclick="closeModal('modal-detail-warga')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="p-5 space-y-4">
-                <div class="flex items-center gap-4 mb-4 border-b border-slate-100 pb-4">
-                    <div class="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-2xl">
-                        <i class="fa-regular fa-user"></i>
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Total Warga</p>
+                            <p class="font-bold text-lg" id="dash-total-warga">0</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-800" id="detail-warga-nama">-</h2>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Blok Rumah</p>
-                        <p class="text-sm font-medium text-slate-800 mt-1" id="detail-warga-blok">-</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">No. Rumah</p>
-                        <p class="text-sm font-medium text-slate-800 mt-1" id="detail-warga-no">-</p>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Trx Bulan Ini</p>
+                            <p class="font-bold text-lg" id="dash-total-trx">0</p>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">No. HP / WA</p>
-                    <p class="text-sm font-medium text-slate-800 mt-1" id="detail-warga-telp">-</p>
-                </div>
-                <button onclick="closeModal('modal-detail-warga')" class="w-full py-2.5 mt-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors">Tutup</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- Modal Catat Uang Masuk (Iuran) -->
-    <div id="modal-tambah-masuk" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800">Catat Pembayaran</h3>
-                <button onclick="closeModal('modal-tambah-masuk')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <form id="form-tambah-masuk" onsubmit="handleTambahMasuk(event)" class="p-4 space-y-4">
-                <input type="hidden" id="masuk-warga-id">
-                <input type="hidden" id="masuk-bulan">
-                <input type="hidden" id="masuk-tahun">
+                <!-- Recent Activity -->
+                <div class="flex justify-between items-end mb-4">
+                    <h3 class="font-bold text-slate-800">Aktivitas Terakhir</h3>
+                </div>
+                <div class="space-y-3" id="dash-aktivitas">
+                    <!-- Activities will be injected here -->
+                </div>
+            </section>
+
+            <!-- SECTION 2: WARGA -->
+            <section id="sec-warga" class="hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Data Warga</h2>
+                    <button onclick="openModal('modal-tambah-warga')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Warga
+                    </button>
+                </div>
+                <div class="relative mb-4">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="search-warga" oninput="renderWarga()" placeholder="Cari nama atau blok..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                </div>
+                <div class="space-y-3" id="list-warga">
+                    <!-- Warga cards go here -->
+                </div>
+            </section>
+
+            <!-- SECTION 3: MASUK (IURAN) -->
+            <section id="sec-masuk" class="hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Status Iuran Warga</h2>
+                </div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 flex gap-2 overflow-x-auto" id="filter-bulan-masuk">
+                    <!-- Bulan filters go here -->
+                </div>
+                <div class="space-y-3" id="list-masuk">
+                    <!-- Iuran cards go here -->
+                </div>
+            </section>
+
+            <!-- SECTION 4: KELUAR (PENGELUARAN) -->
+            <section id="sec-keluar" class="hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Uang Keluar</h2>
+                    <div class="flex gap-2">
+                        <button onclick="cetakLaporanPengeluaran()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                        <button onclick="openModal('modal-tambah-keluar')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Catat
+                        </button>
+                    </div>
+                </div>
                 
-                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2">
-                    <p class="text-[10px] uppercase font-bold text-blue-500 mb-1">Mencatat Iuran Untuk:</p>
-                    <p class="font-bold text-blue-800 text-lg" id="masuk-warga-nama">-</p>
-                    <p class="text-xs text-blue-600 font-medium mt-1">Periode: <span id="masuk-periode-text">-</span></p>
+                <div class="bg-red-50 p-4 rounded-xl border border-red-100 mb-4 flex justify-between items-center">
+                    <div>
+                        <p class="text-xs text-red-600 font-medium">Total Pengeluaran Tahun Ini</p>
+                        <p class="text-lg font-bold text-red-700" id="info-total-pengeluaran">Rp 0</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-trend-down text-2xl text-red-300"></i>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Tanggal Bayar</label>
-                    <input type="date" id="masuk-tanggal" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-1 focus:ring-green-500">
+                <div class="space-y-3" id="list-keluar">
+                    <!-- Pengeluaran cards go here -->
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Nominal (Rp)</label>
-                    <input type="number" id="masuk-nominal" value="15000" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-1 focus:ring-green-500">
-                </div>
-                <button type="submit" class="w-full py-2.5 mt-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"><i class="fa-solid fa-check mr-2"></i>Simpan Pembayaran</button>
-            </form>
-        </div>
-    </div>
+            </section>
 
-    <!-- Modal Catat Uang Keluar (Pengeluaran) -->
-    <div id="modal-tambah-keluar" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-red-50">
-                <h3 class="font-bold text-red-800">Catat Uang Keluar</h3>
-                <button onclick="closeModal('modal-tambah-keluar')" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <!-- SECTION 5: LAPORAN -->
+            <section id="sec-laporan" class="hidden animate-fade-in">
+                <h2 class="text-xl font-bold mb-4">Laporan Iuran Warga</h2>
+                
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Bulan</label>
+                            <select id="lap-bulan" onchange="renderLaporan()" class="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-green-500">
+                                <option value="1">Januari</option><option value="2">Februari</option>
+                                <option value="3">Maret</option><option value="4">April</option>
+                                <option value="5">Mei</option><option value="6">Juni</option>
+                                <option value="7">Juli</option><option value="8">Agustus</option>
+                                <option value="9">September</option><option value="10">Oktober</option>
+                                <option value="11">November</option><option value="12">Desember</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Tahun</label>
+                            <select id="lap-tahun" onchange="renderLaporan()" class="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-green-500">
+                                <!-- Tahun diisi via js -->
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Nominal Wajib (Rp)</label>
+                        <input type="number" id="lap-wajib" value="15000" oninput="renderLaporan()" class="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-green-500">
+                    </div>
+                    <button onclick="cetakLaporanIuran()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-print"></i> Cetak Laporan PDF
+                    </button>
+                </div>
+
+                <div class="space-y-3" id="list-laporan">
+                    <!-- Laporan status go here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- BOTTOM NAVIGATION (No Print) -->
+        <nav class="no-print fixed bottom-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] z-40 pb-[env(safe-area-inset-bottom)]">
+            <div class="max-w-md mx-auto flex justify-around items-center h-16">
+                <button onclick="switchTab('dashboard')" class="nav-btn active flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-dashboard">
+                    <i class="fa-solid fa-house text-xl mb-1"></i>
+                    <span class="text-[10px] font-medium">Beranda</span>
+                </button>
+                <button onclick="switchTab('warga')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-warga">
+                    <i class="fa-solid fa-users text-xl mb-1"></i>
+                    <span class="text-[10px] font-medium">Warga</span>
+                </button>
+                <button onclick="switchTab('masuk')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-masuk">
+                    <i class="fa-solid fa-arrow-right-to-bracket text-xl mb-1"></i>
+                    <span class="text-[10px] font-medium">Masuk</span>
+                </button>
+                <button onclick="switchTab('keluar')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-keluar">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-xl mb-1"></i>
+                    <span class="text-[10px] font-medium">Keluar</span>
+                </button>
+                <button onclick="switchTab('laporan')" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-green-600 transition-colors" data-target="sec-laporan">
+                    <i class="fa-solid fa-file-invoice text-xl mb-1"></i>
+                    <span class="text-[10px] font-medium">Laporan</span>
+                </button>
             </div>
-            <form id="form-tambah-keluar" onsubmit="handleTambahKeluar(event)" class="p-4 space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Tanggal</label>
-                    <input type="date" id="keluar-tanggal" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+        </nav>
+
+        <!-- PRINT CONTAINERS -->
+        <div id="print-area" class="print-only print-container"></div>
+
+        <!-- MODALS -->
+        
+        <!-- Modal Tambah Warga -->
+        <div id="modal-tambah-warga" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-slate-800">Tambah Warga</h3>
+                    <button onclick="closeModal('modal-tambah-warga')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Keterangan / Keperluan</label>
-                    <input type="text" id="keluar-keterangan" placeholder="Cth: Beli lampu jalan" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Nominal Keluar (Rp)</label>
-                    <input type="number" id="keluar-nominal" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
-                </div>
-                <button type="submit" class="w-full py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors">Simpan Pengeluaran</button>
-            </form>
+                <form id="form-tambah-warga" onsubmit="handleTambahWarga(event)" class="p-4 space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" id="warga-nama" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Blok Rumah</label>
+                            <input type="text" id="warga-blok" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">No. Rumah</label>
+                            <input type="text" id="warga-no" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">No. HP/WA (Opsional)</label>
+                        <input type="text" id="warga-telp" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors">Simpan Warga</button>
+                </form>
+            </div>
         </div>
-    </div>
+
+        <!-- Modal Edit Warga -->
+        <div id="modal-edit-warga" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-slate-800">Edit Data Warga</h3>
+                    <button onclick="closeModal('modal-edit-warga')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form id="form-edit-warga" onsubmit="handleEditWarga(event)" class="p-4 space-y-4">
+                    <input type="hidden" id="edit-warga-id">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" id="edit-warga-nama" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Blok Rumah</label>
+                            <input type="text" id="edit-warga-blok" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">No. Rumah</label>
+                            <input type="text" id="edit-warga-no" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">No. HP/WA (Opsional)</label>
+                        <input type="text" id="edit-warga-telp" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500 outline-none">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">Simpan Perubahan</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Detail Warga -->
+        <div id="modal-detail-warga" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-slate-800">Detail Warga</h3>
+                    <button onclick="closeModal('modal-detail-warga')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div class="flex items-center gap-4 mb-4 border-b border-slate-100 pb-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-2xl">
+                            <i class="fa-regular fa-user"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800" id="detail-warga-nama">-</h2>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Blok Rumah</p>
+                            <p class="text-sm font-medium text-slate-800 mt-1" id="detail-warga-blok">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">No. Rumah</p>
+                            <p class="text-sm font-medium text-slate-800 mt-1" id="detail-warga-no">-</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">No. HP / WA</p>
+                        <p class="text-sm font-medium text-slate-800 mt-1" id="detail-warga-telp">-</p>
+                    </div>
+                    <button onclick="closeModal('modal-detail-warga')" class="w-full py-2.5 mt-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors">Tutup</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Catat Uang Masuk (Iuran) -->
+        <div id="modal-tambah-masuk" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-slate-800">Catat Pembayaran</h3>
+                    <button onclick="closeModal('modal-tambah-masuk')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form id="form-tambah-masuk" onsubmit="handleTambahMasuk(event)" class="p-4 space-y-4">
+                    <input type="hidden" id="masuk-warga-id">
+                    <input type="hidden" id="masuk-bulan">
+                    <input type="hidden" id="masuk-tahun">
+                    
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2">
+                        <p class="text-[10px] uppercase font-bold text-blue-500 mb-1">Mencatat Iuran Untuk:</p>
+                        <p class="font-bold text-blue-800 text-lg" id="masuk-warga-nama">-</p>
+                        <p class="text-xs text-blue-600 font-medium mt-1">Periode: <span id="masuk-periode-text">-</span></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Tanggal Bayar</label>
+                        <input type="date" id="masuk-tanggal" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-1 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Nominal (Rp)</label>
+                        <input type="number" id="masuk-nominal" value="15000" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-1 focus:ring-green-500">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 mt-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"><i class="fa-solid fa-check mr-2"></i>Simpan Pembayaran</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Catat Uang Keluar (Pengeluaran) -->
+        <div id="modal-tambah-keluar" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 px-4 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden animate-slide-up">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-red-50">
+                    <h3 class="font-bold text-red-800">Catat Uang Keluar</h3>
+                    <button onclick="closeModal('modal-tambah-keluar')" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form id="form-tambah-keluar" onsubmit="handleTambahKeluar(event)" class="p-4 space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Tanggal</label>
+                        <input type="date" id="keluar-tanggal" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Keterangan / Keperluan</label>
+                        <input type="text" id="keluar-keterangan" placeholder="Cth: Beli lampu jalan" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Nominal Keluar (Rp)</label>
+                        <input type="number" id="keluar-nominal" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors">Simpan Pengeluaran</button>
+                </form>
+            </div>
+        </div>
 
     </div> <!-- AKHIR BUNGKUS APLIKASI -->
 
@@ -431,7 +424,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, deleteDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- 1. STATE & DATA INITIALIZATION ---
         const state = {
@@ -441,7 +434,7 @@
             filterMasukBulan: new Date().getMonth() + 1,
             filterMasukTahun: new Date().getFullYear()
         };
-        window.state = state; // Expose for inline HTML events
+        window.state = state; 
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'jimpitan-app';
         let db, auth;
@@ -468,7 +461,6 @@
 
                 if (!auth.currentUser) return;
 
-                // Gunakan direktori 'public' agar bisa dibuka dan sinkron oleh antar pengurus
                 wargaRef = collection(db, 'artifacts', appId, 'public', 'data', 'warga');
                 masukRef = collection(db, 'artifacts', appId, 'public', 'data', 'masuk');
                 keluarRef = collection(db, 'artifacts', appId, 'public', 'data', 'keluar');
@@ -497,7 +489,6 @@
             }, (err) => console.error(err));
         }
 
-        // Setup Date defaults
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('masuk-tanggal').value = today;
         document.getElementById('keluar-tanggal').value = today;
@@ -506,7 +497,6 @@
         const currentYear = new Date().getFullYear();
         document.getElementById('lap-bulan').value = currentMonth;
         
-        // Populate years
         const yearSelects = ['lap-tahun'];
         yearSelects.forEach(id => {
             const el = document.getElementById(id);
@@ -579,8 +569,6 @@
         }
 
         // --- 3. CLOUD CRUD LOGIC ---
-
-        // WARGA
         async function handleTambahWarga(e) {
             e.preventDefault();
             if(!auth || !auth.currentUser) return showToast('Koneksi belum siap', 'error');
@@ -593,7 +581,7 @@
                 });
                 closeModal('modal-tambah-warga');
                 showToast('Warga ditambahkan!');
-            } catch(err) { showToast('Gagal menyimpan ke Cloud', 'error'); }
+            } catch(err) { showToast('Gagal menyimpan', 'error'); }
         }
 
         function bukaDetailWarga(id) {
@@ -634,7 +622,7 @@
         }
 
         async function hapusWarga(id) {
-            if(confirm('Hapus data warga ini? Data transaksi yang terkait mungkin akan kehilangan nama.')) {
+            if(confirm('Hapus data warga ini?')) {
                 if(!auth || !auth.currentUser) return;
                 try {
                     await deleteDoc(doc(wargaRef, id));
@@ -643,7 +631,6 @@
             }
         }
 
-        // MASUK
         function bukaModalBayar(idWarga) {
             const w = state.warga.find(x => x.id === idWarga);
             if(!w) return;
@@ -668,8 +655,7 @@
             
             const duplikat = state.masuk.find(m => m.idWarga === idWarga && m.bulan === bulan && m.tahun === tahun);
             if(duplikat) {
-                showToast(`Iuran sudah dicatat!`, 'error');
-                return;
+                showToast(`Iuran sudah dicatat!`, 'error'); return;
             }
 
             try {
@@ -694,7 +680,6 @@
             }
         }
 
-        // KELUAR
         async function handleTambahKeluar(e) {
             e.preventDefault();
             if(!auth || !auth.currentUser) return;
@@ -718,7 +703,6 @@
         }
 
         // --- 4. RENDER UI LOGIC ---
-
         function renderDashboard() {
             let totalMasuk = 0; let totalKeluar = 0;
             let masukBulanIni = 0; let keluarBulanIni = 0;
@@ -793,8 +777,7 @@
             );
 
             if(filtered.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Tidak ada data warga.</div>`;
-                return;
+                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Tidak ada data warga.</div>`; return;
             }
 
             filtered.sort((a,b) => a.nama.localeCompare(b.nama)).forEach((w, index) => {
@@ -838,8 +821,7 @@
             list.innerHTML = '';
             
             if(state.warga.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Data warga masih kosong.</div>`;
-                return;
+                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">Data warga masih kosong.</div>`; return;
             }
 
             let sortedWarga = [...state.warga].sort((a,b) => a.nama.localeCompare(b.nama));
@@ -1030,17 +1012,14 @@
             window.print();
         }
 
-        // FUNGSI LOGIN
         function handleLogin(e) {
             e.preventDefault();
             const sandi = document.getElementById('input-sandi').value;
             
-            // Cek apakah sandi benar (Anda bisa mengganti 'adminrt' dengan sandi lain)
             if(sandi === 'adminrt') {
                 document.getElementById('login-container').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
                 
-                // Baru mulai mengambil data Cloud Database setelah berhasil login
                 initFirebase();
                 showToast('Berhasil masuk!', 'success');
             } else {
@@ -1048,7 +1027,6 @@
             }
         }
 
-        // Mengekspor fungsi ke global (window) agar bisa dipanggil oleh tombol di HTML
         window.handleLogin = handleLogin;
         window.openModal = openModal;
         window.closeModal = closeModal;
@@ -1070,9 +1048,7 @@
         window.cetakLaporanIuran = cetakLaporanIuran;
         window.cetakLaporanPengeluaran = cetakLaporanPengeluaran;
 
-        // --- 6. INITIAL RENDER & FIREBASE SETUP ---
         renderDashboard();
-        // initFirebase(); -- Sekarang dipanggil HANYA JIKA sandi benar di dalam fungsi handleLogin()
 
     </script>
 </body>
